@@ -17,8 +17,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.kamel.image.KamelImage
 import org.jetbrains.compose.resources.painterResource
-import io.kamel.image.lazyPainterResource
-import com.jetbrains.kmpapp.Roboto
 import kmp_app_template.composeapp.generated.resources.Res.drawable
 import kmp_app_template.composeapp.generated.resources.Res
 import kmp_app_template.composeapp.generated.resources.zerapylogo

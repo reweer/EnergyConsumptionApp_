@@ -25,11 +25,21 @@ import java.io.IOException
 import java.nio.ByteBuffer
 import android.util.Log
 import androidx.annotation.OptIn
+import androidx.compose.runtime.DisposableEffect
 
 @OptIn(ExperimentalGetImage::class)
 @Composable
 actual fun CameraView() {
+
     val context = LocalContext.current
+    val batteryStatus = remember { getBatteryStatus(context) }
+
+    DisposableEffect(Unit) {
+        logBatteryStatus(context, batteryStatus)
+        onDispose { }
+    }
+
+
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }

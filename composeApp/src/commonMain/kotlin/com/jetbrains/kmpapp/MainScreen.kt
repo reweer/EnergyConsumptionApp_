@@ -11,6 +11,7 @@ fun MainScreen(viewModel: PoseDetectionViewModel) {
     } else {
         when (solution) {
             PoseDetectionSolution.MLKit -> CameraView()
+            PoseDetectionSolution.MediaPipe -> CameraView()
         }
     }
 }
