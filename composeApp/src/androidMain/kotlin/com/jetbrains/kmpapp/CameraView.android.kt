@@ -27,21 +27,19 @@ import android.util.Log
 import androidx.annotation.OptIn
 import androidx.compose.runtime.DisposableEffect
 
+
+import androidx.compose.runtime.LaunchedEffect
+
 @OptIn(ExperimentalGetImage::class)
 @Composable
 actual fun CameraView() {
-
     val context = LocalContext.current
-    val batteryStatus = remember { getBatteryStatus(context) }
 
-    DisposableEffect(Unit) {
-        logBatteryStatus(context, batteryStatus)
-        onDispose { }
+    LaunchedEffect(true) {
+        startBatteryStatusLogging(context)
     }
 
-
     val lifecycleOwner = LocalLifecycleOwner.current
-
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
     val previewView = remember { PreviewView(context) }
     val graphicOverlay = remember { GraphicOverlay(context, null) }
@@ -96,6 +94,7 @@ actual fun CameraView() {
 
     AndroidView(factory = { graphicOverlay }, modifier = Modifier.fillMaxSize())
 }
+
 
 
 @OptIn(ExperimentalGetImage::class)

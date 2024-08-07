@@ -69,8 +69,8 @@ fun StartScreen(viewModel: PoseDetectionViewModel) {
         Text(
             text = "Select scanning method",
             fontSize = 30.sp,
-            color = Color(0xFF393939), //1A6A73 gray
-            fontFamily = Roboto_medium,
+            color = Color.Gray, //1A6A73 gray 393939
+            fontFamily = Roboto_light,
             modifier = Modifier
                 .padding(start = 16.dp, top = 70.dp, bottom = 23.dp)
         )
