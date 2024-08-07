@@ -17,7 +17,10 @@ data class BatteryStatus(
     val isCharging: Boolean,
     val usbCharge: Boolean,
     val acCharge: Boolean,
-    val batteryPct: Float?
+    val batteryPct: Float?,
+    val currentNow: Float?,
+    val capacity: Int?,
+    val chargeCounter: Float?
 )
 
 fun getBatteryStatus(context: Context): BatteryStatus {
@@ -34,12 +37,26 @@ fun getBatteryStatus(context: Context): BatteryStatus {
     val scale = batteryStatus?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
     val batteryPct = if (level >= 0 && scale > 0) (level.toFloat() / scale.toFloat()) * 100 else null
 
-    return BatteryStatus(isCharging, usbCharge, acCharge, batteryPct)
+    val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+    val currentNow = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) / 1000.0f // in mA
+    val capacity = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) // in mAh
+    val chargeCounter = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER) / 1000.0f // in mAh
+
+    return BatteryStatus(isCharging, usbCharge, acCharge, batteryPct, currentNow, capacity, chargeCounter)
 }
 
 fun logBatteryStatus(context: Context, batteryStatus: BatteryStatus) {
     val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
-    val logMessage = "$timestamp - Charging: ${batteryStatus.isCharging}, USB Charge: ${batteryStatus.usbCharge}, AC Charge: ${batteryStatus.acCharge}, Battery Percentage: ${batteryStatus.batteryPct}"
+    val logMessage = """
+        $timestamp - 
+        Charging: ${batteryStatus.isCharging}, 
+        USB Charge: ${batteryStatus.usbCharge}, 
+        AC Charge: ${batteryStatus.acCharge}, 
+        Battery Percentage: ${batteryStatus.batteryPct},
+        Current Now: ${batteryStatus.currentNow} mA,
+        Capacity: ${batteryStatus.capacity} mAh,
+        Charge Counter: ${batteryStatus.chargeCounter} mAh
+    """.trimIndent()
     val file = File(context.getExternalFilesDir(null), "battery_log.txt")
     FileOutputStream(file, true).use { fos ->
         PrintWriter(fos).use { writer ->
@@ -54,7 +71,7 @@ fun startBatteryStatusLogging(context: Context) {
         override fun run() {
             val batteryStatus = getBatteryStatus(context)
             logBatteryStatus(context, batteryStatus)
-            handler.postDelayed(this, 180000) //3 min
+            handler.postDelayed(this, 180000) // 3 minutes
         }
     }
     handler.post(runnable)

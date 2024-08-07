@@ -1,8 +1,6 @@
 package com.jetbrains.kmpapp
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.net.Uri
 import android.util.Size
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -20,15 +18,15 @@ import com.google.mlkit.vision.pose.Pose
 import com.google.mlkit.vision.pose.PoseDetection
 import com.google.mlkit.vision.pose.PoseDetector
 import com.google.mlkit.vision.pose.defaults.PoseDetectorOptions
+import android.util.Log
+import androidx.annotation.OptIn
+import androidx.compose.runtime.LaunchedEffect
+import android.graphics.Bitmap
+import android.net.Uri
 import com.google.mlkit.vision.pose.PoseLandmark
 import java.io.IOException
 import java.nio.ByteBuffer
-import android.util.Log
-import androidx.annotation.OptIn
-import androidx.compose.runtime.DisposableEffect
 
-
-import androidx.compose.runtime.LaunchedEffect
 
 @OptIn(ExperimentalGetImage::class)
 @Composable
@@ -64,21 +62,7 @@ actual fun CameraView() {
                 .build()
 
             imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(context)) { imageProxy ->
-                val rotationDegrees = imageProxy.imageInfo.rotationDegrees
-                val image = InputImage.fromMediaImage(imageProxy.image!!, rotationDegrees)
-                poseDetector.process(image)
-                    .addOnSuccessListener { pose ->
-                        graphicOverlay.setImageSourceInfo(imageProxy.width, imageProxy.height, rotationDegrees, isFrontFacing = true)
-                        graphicOverlay.clear()
-                        graphicOverlay.add(PoseGraphic(graphicOverlay, pose))
-                        graphicOverlay.postInvalidate()
-                    }
-                    .addOnFailureListener { e ->
-                        Log.e("PoseDetection", "Pose detection failed: ${e.message}")
-                    }
-                    .addOnCompleteListener {
-                        imageProxy.close()
-                    }
+                processImageProxy(poseDetector, imageProxy, graphicOverlay)
             }
 
             try {
@@ -95,8 +79,6 @@ actual fun CameraView() {
     AndroidView(factory = { graphicOverlay }, modifier = Modifier.fillMaxSize())
 }
 
-
-
 @OptIn(ExperimentalGetImage::class)
 fun processImageProxy(poseDetector: PoseDetector, imageProxy: ImageProxy, graphicOverlay: GraphicOverlay) {
     val mediaImage = imageProxy.image
@@ -106,6 +88,7 @@ fun processImageProxy(poseDetector: PoseDetector, imageProxy: ImageProxy, graphi
             .addOnSuccessListener { pose: Pose ->
                 graphicOverlay.clear()
                 graphicOverlay.add(PoseGraphic(graphicOverlay, pose))
+                graphicOverlay.postInvalidate()
             }
             .addOnFailureListener { e ->
                 Log.e("PoseDetection", "Pose detection failed: ${e.message}")
@@ -117,6 +100,8 @@ fun processImageProxy(poseDetector: PoseDetector, imageProxy: ImageProxy, graphi
         imageProxy.close()
     }
 }
+
+
 
 
 fun handlePoseDetectionSuccess(pose: Pose) {
