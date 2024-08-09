@@ -21,8 +21,10 @@ import kmp_app_template.composeapp.generated.resources.Res.drawable
 import kmp_app_template.composeapp.generated.resources.Res
 import kmp_app_template.composeapp.generated.resources.zerapylogo
 import kmp_app_template.composeapp.generated.resources.mlkitlogo
+import kmp_app_template.composeapp.generated.resources.yolologo
 import kmp_app_template.composeapp.generated.resources.zerapylogocombinedcropped
 import kmp_app_template.composeapp.generated.resources.Roboto_Medium
+import kmp_app_template.composeapp.generated.resources.yolologofinal
 
 
 @Composable
@@ -83,6 +85,11 @@ fun StartScreen(viewModel: PoseDetectionViewModel) {
                 .padding(horizontal = 16.dp)
         ) {
             items(solutions) { solution ->
+                val (logo, logoSize) = when (solution) {
+                    PoseDetectionSolution.MLKit -> Res.drawable.mlkitlogo to 60.dp
+                    PoseDetectionSolution.Yolo_v8 -> Res.drawable.yolologofinal to 45.dp
+                }
+
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier.fillMaxWidth()
@@ -100,9 +107,9 @@ fun StartScreen(viewModel: PoseDetectionViewModel) {
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Image(
-                                painter = painterResource(Res.drawable.mlkitlogo),
-                                contentDescription = "MLKit Icon",
-                                modifier = Modifier.size(60.dp)
+                                painter = painterResource(logo),
+                                contentDescription = "${solution.name} Icon",
+                                modifier = Modifier.size(logoSize) // Use the logo-specific size
                             )
                             Spacer(modifier = Modifier.width(10.dp))  // tekst a ikona
                             Text(
