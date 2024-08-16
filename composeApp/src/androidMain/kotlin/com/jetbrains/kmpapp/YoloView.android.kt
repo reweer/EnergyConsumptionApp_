@@ -1,5 +1,6 @@
 package com.jetbrains.kmpapp
 
+import android.content.res.AssetManager
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -11,6 +12,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
+import android.util.Size
+import androidx.camera.core.ExperimentalGetImage
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageProxy
+import androidx.core.content.ContextCompat
+
 
 @Composable
 actual fun YoloView() {
@@ -34,3 +41,5 @@ actual fun YoloView() {
             cameraProvider.bindToLifecycle(lifeCycleOwner, cameraSelector, preview)
         })
 }
+
+
