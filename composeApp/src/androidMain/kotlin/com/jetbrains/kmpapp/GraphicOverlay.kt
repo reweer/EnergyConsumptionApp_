@@ -4,41 +4,63 @@ import android.content.Context
 import android.graphics.Canvas
 import android.util.AttributeSet
 import android.view.View
+import androidx.camera.view.PreviewView
+
+
 
 class GraphicOverlay(context: Context, attrs: AttributeSet?) : View(context, attrs) {
     private val lock = Any()
     private val graphics = mutableListOf<Graphic>()
     private var imageWidth: Int = 0
     private var imageHeight: Int = 0
-    private var imageRotationDegrees: Int = 0
-    var widthScaleFactor = 1.0f
-    var heightScaleFactor = 1.0f
-    var isFrontFacing = true
+    private var isFrontFacing = false
+    private var scaleFactor = 1.0f
+    private var offsetX = 0.0f
+    private var offsetY = 0.0f
+    private var previewView: PreviewView? = null
 
-    fun setImageSourceInfo(width: Int, height: Int, rotationDegrees: Int, isFrontFacing: Boolean) {
+    fun setPreviewView(previewView: PreviewView) {
+        this.previewView = previewView
+    }
+
+    fun setImageSourceInfo(width: Int, height: Int, isFrontFacing: Boolean) {
         synchronized(lock) {
             imageWidth = width
             imageHeight = height
-            imageRotationDegrees = rotationDegrees
             this.isFrontFacing = isFrontFacing
 
-            // skala do kamery
-            widthScaleFactor = width.toFloat() / this.width
-            heightScaleFactor = height.toFloat() / this.height
+            val viewAspectRatio = this.width.toFloat() / this.height.toFloat()
+            val imageAspectRatio = imageWidth.toFloat() / imageHeight.toFloat()
+
+            if (viewAspectRatio > imageAspectRatio) {
+                // View is wider than the image
+                scaleFactor = this.height.toFloat() / imageHeight.toFloat()
+                offsetX = (this.width - imageWidth * scaleFactor) / 2f
+                offsetY = 0f
+            } else {
+                // View is taller than the image
+                scaleFactor = this.width.toFloat() / imageWidth.toFloat()
+                offsetX = 0f
+                offsetY = (this.height - imageHeight * scaleFactor) / 2f
+            }
         }
     }
 
+
+
     fun translateX(x: Float): Float {
-        return if (isFrontFacing) {
-            this.width - (x / widthScaleFactor)
-        } else {
-            x / widthScaleFactor
-        }
+        val centerX = this.width / 1.5f // Center of the overlay
+        return centerX + (x * scaleFactor - offsetX - centerX) * 1.5f + 80 // Scale relative to the center
     }
 
     fun translateY(y: Float): Float {
-        return y / heightScaleFactor
+        val centerY = this.height / 2.0f // Center of the overlay
+        return centerY + (y * scaleFactor + offsetY - centerY) * 1.5f // Scale relative to the center
     }
+
+
+
+
 
     abstract class Graphic(protected val overlay: GraphicOverlay) {
         abstract fun draw(canvas: Canvas)
@@ -47,13 +69,6 @@ class GraphicOverlay(context: Context, attrs: AttributeSet?) : View(context, att
     fun add(graphic: Graphic) {
         synchronized(lock) {
             graphics.add(graphic)
-        }
-        postInvalidate()
-    }
-
-    fun remove(graphic: Graphic) {
-        synchronized(lock) {
-            graphics.remove(graphic)
         }
         postInvalidate()
     }

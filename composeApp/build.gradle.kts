@@ -46,6 +46,8 @@ kotlin {
             // Jeśli chcesz używać podstawowego SDK ML Kit
             implementation(libs.pose.detection)
 
+
+
             // Jeśli chcesz używać dokładniejszego SDK ML Kit
             implementation("com.google.mlkit:pose-detection-accurate:18.0.0-beta4")
 

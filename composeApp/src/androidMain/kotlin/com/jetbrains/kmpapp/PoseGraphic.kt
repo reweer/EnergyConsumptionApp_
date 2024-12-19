@@ -8,6 +8,7 @@ import android.util.AttributeSet
 import android.view.View
 import com.google.mlkit.vision.pose.Pose
 
+
 class PoseGraphic(overlay: GraphicOverlay, private val pose: Pose) : GraphicOverlay.Graphic(overlay) {
     private val paint = Paint().apply {
         color = Color.GREEN

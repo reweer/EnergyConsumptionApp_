@@ -26,6 +26,8 @@ import android.net.Uri
 import com.google.mlkit.vision.pose.PoseLandmark
 import java.io.IOException
 import java.nio.ByteBuffer
+import android.widget.FrameLayout
+
 
 
 @OptIn(ExperimentalGetImage::class)
@@ -33,16 +35,35 @@ import java.nio.ByteBuffer
 actual fun CameraView() {
     val context = LocalContext.current
 
+    // battery status logging
     LaunchedEffect(true) {
         startBatteryStatusLogging(context)
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
+
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
     val previewView = remember { PreviewView(context) }
     val graphicOverlay = remember { GraphicOverlay(context, null) }
 
-    AndroidView(factory = { previewView },
+    // UI
+    AndroidView(
+        factory = {
+
+            android.widget.FrameLayout(context).apply {
+
+                addView(previewView, android.widget.FrameLayout.LayoutParams(
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+                ))
+
+
+                addView(graphicOverlay, android.widget.FrameLayout.LayoutParams(
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+                ))
+            }
+        },
         modifier = Modifier.fillMaxSize(),
         update = {
             val cameraProvider = cameraProviderFuture.get()
@@ -50,42 +71,62 @@ actual fun CameraView() {
                 setSurfaceProvider(previewView.surfaceProvider)
             }
 
-            val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
+            graphicOverlay.setPreviewView(previewView)
+
+            // Set up pose detector
             val poseDetectorOptions = PoseDetectorOptions.Builder()
-                .setDetectorMode(PoseDetectorOptions.STREAM_MODE)
+                .setDetectorMode(PoseDetectorOptions.STREAM_MODE) // Real-time
                 .build()
             val poseDetector = PoseDetection.getClient(poseDetectorOptions)
 
+            // Configure ImageAnalysis
             val imageAnalysis = ImageAnalysis.Builder()
-                .setTargetResolution(Size(640, 480))
+                .setTargetResolution(Size(640, 480)) // resolution
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
 
+            // procesowanie frame'ow przez ML Kit Pose Detector
             imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(context)) { imageProxy ->
                 processImageProxy(poseDetector, imageProxy, graphicOverlay)
             }
 
+            // bindowanie kamery
             try {
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(
-                    lifecycleOwner, cameraSelector, preview, imageAnalysis
+                    lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageAnalysis
                 )
             } catch (exc: Exception) {
                 Log.e("CameraView", "Use case binding failed", exc)
             }
         }
     )
-
-    AndroidView(factory = { graphicOverlay }, modifier = Modifier.fillMaxSize())
 }
+
+
+
+
+
+
+
+
 
 @OptIn(ExperimentalGetImage::class)
 fun processImageProxy(poseDetector: PoseDetector, imageProxy: ImageProxy, graphicOverlay: GraphicOverlay) {
     val mediaImage = imageProxy.image
     if (mediaImage != null) {
         val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+
+        // przekazywanie rozmiarow wejsciowego orazu do graphicoverlay
+        graphicOverlay.setImageSourceInfo(
+            mediaImage.width, // Camera image width
+            mediaImage.height, // Camera image height
+            isFrontFacing = false // Back camera
+        )
+
         poseDetector.process(image)
             .addOnSuccessListener { pose: Pose ->
+                // zupdate'owanie graphic overlay
                 graphicOverlay.clear()
                 graphicOverlay.add(PoseGraphic(graphicOverlay, pose))
                 graphicOverlay.postInvalidate()
@@ -100,6 +141,9 @@ fun processImageProxy(poseDetector: PoseDetector, imageProxy: ImageProxy, graphi
         imageProxy.close()
     }
 }
+
+
+
 
 
 
